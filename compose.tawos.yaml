@@ -1,0 +1,31 @@
+name: average-task-performance-tawos
+
+services:
+  mysql:
+    image: mysql:8.0.44
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${TAWOS_MYSQL_ROOT_PASSWORD:-tawos_root_dev_password}
+      MYSQL_DATABASE: ${TAWOS_MYSQL_DATABASE:-tawos}
+      MYSQL_USER: ${TAWOS_MYSQL_USER:-tawos}
+      MYSQL_PASSWORD: ${TAWOS_MYSQL_PASSWORD:-tawos_dev_password}
+      MYSQL_INITDB_SKIP_TZINFO: "1"
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --max-allowed-packet=1G
+      - --innodb-redo-log-capacity=2G
+    ports:
+      - "127.0.0.1:${TAWOS_MYSQL_PORT:-3307}:3306"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
+      interval: 15s
+      timeout: 10s
+      retries: 120
+      start_period: 60s
+    volumes:
+      - tawos_mysql_data:/var/lib/mysql
+      - ./data/raw/tawos/TAWOS.sql:/docker-entrypoint-initdb.d/01-tawos.sql:ro
+
+volumes:
+  tawos_mysql_data:

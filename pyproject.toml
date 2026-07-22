@@ -1,0 +1,7 @@
+[project]
+name = "average-task-performance"
+version = "0.1.0"
+description = "Experiments for predicting software issue resolution time with TAWOS"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []

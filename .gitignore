@@ -9,6 +9,7 @@ wheels/
 # Virtual environments
 .env
 .venv/
+.ipynb_checkpoints/
 
 # Downloaded datasets and generated artifacts
 /data/

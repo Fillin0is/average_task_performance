@@ -25,7 +25,7 @@ services:
       start_period: 60s
     volumes:
       - tawos_mysql_data:/var/lib/mysql
-      - ./data/raw/tawos/TAWOS.sql:/docker-entrypoint-initdb.d/01-tawos.sql:ro
+      - ../data/raw/tawos/TAWOS.sql:/docker-entrypoint-initdb.d/01-tawos.sql:ro
     networks:
       - tawos-net
 

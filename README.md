@@ -18,12 +18,14 @@ TAWOS содержит задачи из 39 open-source проектов, их �
 
 ## Запуск на другом компьютере
 
+Подробная пошаговая памятка для Windows: [docs/SETUP.md](docs/SETUP.md).
+
 ```bash
 git clone https://github.com/Fillin0is/average_task_performance.git
 cd average_task_performance
-cp .env.example .env
+cp docker/.env.example docker/.env
 ./scripts/download_tawos.sh
-docker compose -f compose.tawos.yaml up -d
+docker compose --env-file docker/.env -f docker/docker-compose.tawos.yaml up -d
 ./scripts/check_tawos.sh
 ```
 
@@ -50,8 +52,8 @@ docker compose -f compose.tawos.yaml up -d
 создаёт базу `tawos` и импортирует dump:
 
 ```bash
-docker compose -f compose.tawos.yaml up -d
-docker compose -f compose.tawos.yaml logs -f mysql
+docker compose --env-file docker/.env -f docker/docker-compose.tawos.yaml up -d
+docker compose --env-file docker/.env -f docker/docker-compose.tawos.yaml logs -f mysql
 ```
 
 Импорт 4,1 ГБ может занять несколько минут. До его окончания контейнер будет
@@ -62,7 +64,8 @@ docker compose -f compose.tawos.yaml logs -f mysql
 ```
 
 MySQL доступен только локально на `127.0.0.1:3307`. Настройки для разработки
-можно изменить, скопировав `.env.example` в `.env` до первого запуска.
+можно изменить, скопировав `docker/.env.example` в `docker/.env` до первого
+запуска.
 
 ## Просмотр данных
 
@@ -79,14 +82,14 @@ MySQL доступен только локально на `127.0.0.1:3307`. На
 Быстро открыть MySQL CLI без установки клиента на компьютер:
 
 ```bash
-docker compose -f compose.tawos.yaml exec mysql \
+docker compose --env-file docker/.env -f docker/docker-compose.tawos.yaml exec mysql \
   mysql -utawos -ptawos_dev_password tawos
 ```
 
 Остановить MySQL с сохранением данных:
 
 ```bash
-docker compose -f compose.tawos.yaml down
+docker compose --env-file docker/.env -f docker/docker-compose.tawos.yaml down
 ```
 
 Именованный volume позволяет повторно запускать контейнер без нового импорта.
@@ -94,7 +97,7 @@ docker compose -f compose.tawos.yaml down
 на месте:
 
 ```bash
-docker compose -f compose.tawos.yaml down --volumes
+docker compose --env-file docker/.env -f docker/docker-compose.tawos.yaml down --volumes
 ```
 
 ## Источник

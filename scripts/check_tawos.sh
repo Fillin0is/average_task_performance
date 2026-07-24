@@ -7,7 +7,7 @@ readonly PROJECT_DIR="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 cd "${PROJECT_DIR}"
 
 for readiness_attempt in {1..60}; do
-  if docker compose -f compose.tawos.yaml exec -T \
+  if docker compose --env-file docker/.env -f docker/docker-compose.tawos.yaml exec -T \
       --env MYSQL_PWD="${TAWOS_MYSQL_PASSWORD:-tawos_dev_password}" \
       mysql \
       mysqladmin ping \
@@ -23,7 +23,7 @@ for readiness_attempt in {1..60}; do
   sleep 2
 done
 
-docker compose -f compose.tawos.yaml exec -T \
+docker compose --env-file docker/.env -f docker/docker-compose.tawos.yaml exec -T \
   --env MYSQL_PWD="${TAWOS_MYSQL_PASSWORD:-tawos_dev_password}" \
   mysql \
   mysql \

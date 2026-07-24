@@ -72,7 +72,6 @@ Copy-Item docker\.env.example docker\.env
 
 ```powershell
 docker compose `
-  --env-file docker/.env `
   -f docker/docker-compose.tawos.yaml `
   up -d
 ```
@@ -82,7 +81,6 @@ docker compose `
 
 ```powershell
 docker compose `
-  --env-file docker/.env `
   -f docker/docker-compose.tawos.yaml `
   logs -f mysql
 ```
@@ -105,7 +103,6 @@ MySQL init process done. Ready for start up.
 
 ```powershell
 docker compose `
-  --env-file docker/.env `
   -f docker/docker-compose.tawos.yaml `
   ps
 ```
@@ -232,7 +229,6 @@ show(df)
 
 ```powershell
 docker compose `
-  --env-file docker/.env `
   -f docker/docker-compose.tawos.yaml `
   down
 ```
@@ -241,7 +237,6 @@ docker compose `
 
 ```powershell
 docker compose `
-  --env-file docker/.env `
   -f docker/docker-compose.tawos.yaml `
   up -d
 ```
@@ -253,7 +248,6 @@ docker compose `
 
 ```powershell
 docker compose `
-  --env-file docker/.env `
   -f docker/docker-compose.tawos.yaml `
   down --volumes
 ```

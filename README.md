@@ -25,7 +25,7 @@ git clone https://github.com/Fillin0is/average_task_performance.git
 cd average_task_performance
 cp docker/.env.example docker/.env
 ./scripts/download_tawos.sh
-docker compose --env-file docker/.env -f docker/docker-compose.tawos.yaml up -d
+docker compose -f docker/docker-compose.tawos.yaml up -d
 ./scripts/check_tawos.sh
 ```
 
@@ -52,8 +52,8 @@ docker compose --env-file docker/.env -f docker/docker-compose.tawos.yaml up -d
 создаёт базу `tawos` и импортирует dump:
 
 ```bash
-docker compose --env-file docker/.env -f docker/docker-compose.tawos.yaml up -d
-docker compose --env-file docker/.env -f docker/docker-compose.tawos.yaml logs -f mysql
+docker compose -f docker/docker-compose.tawos.yaml up -d
+docker compose -f docker/docker-compose.tawos.yaml logs -f mysql
 ```
 
 Импорт 4,1 ГБ может занять несколько минут. До его окончания контейнер будет
@@ -82,14 +82,14 @@ MySQL доступен только локально на `127.0.0.1:3307`. На
 Быстро открыть MySQL CLI без установки клиента на компьютер:
 
 ```bash
-docker compose --env-file docker/.env -f docker/docker-compose.tawos.yaml exec mysql \
+docker compose -f docker/docker-compose.tawos.yaml exec mysql \
   mysql -utawos -ptawos_dev_password tawos
 ```
 
 Остановить MySQL с сохранением данных:
 
 ```bash
-docker compose --env-file docker/.env -f docker/docker-compose.tawos.yaml down
+docker compose -f docker/docker-compose.tawos.yaml down
 ```
 
 Именованный volume позволяет повторно запускать контейнер без нового импорта.
@@ -97,7 +97,7 @@ docker compose --env-file docker/.env -f docker/docker-compose.tawos.yaml down
 на месте:
 
 ```bash
-docker compose --env-file docker/.env -f docker/docker-compose.tawos.yaml down --volumes
+docker compose -f docker/docker-compose.tawos.yaml down --volumes
 ```
 
 ## Источник

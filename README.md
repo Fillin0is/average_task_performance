@@ -7,6 +7,9 @@ TAWOS содержит задачи из 39 open-source проектов, их �
 историю изменений и несколько оценок длительности, включая
 `Resolution_Time_Minutes`, `In_Progress_Minutes` и `Total_Effort_Minutes`.
 
+Полное описание структуры базы, связей и русская расшифровка атрибутов:
+[docs/DATABASE_DICTIONARY_RU.md](docs/DATABASE_DICTIONARY_RU.md).
+
 Сам датасет и содержимое MySQL не хранятся в Git: вместе они занимают около
 17 ГБ. Репозиторий содержит воспроизводимые скрипты загрузки и развёртывания.
 
@@ -106,3 +109,27 @@ docker compose -f docker/docker-compose.tawos.yaml down --volumes
 - [Описание и схема](https://github.com/SOLAR-group/TAWOS)
 - V. Tawosi et al., *A Versatile Dataset of Agile Open Source Software
   Projects*, MSR 2022, DOI: 10.1145/3524842.3528029.
+
+## Обучение baseline и запуск API
+
+Обучить модель на данных из MySQL и сохранить её локально:
+
+```powershell
+uv run python -m ml.train
+```
+
+Модель появится в `artifacts/duration_model.joblib`, а метрики — в
+`reports/baseline_metrics.json`. Каталог `artifacts` не попадает в Git.
+
+Запустить API:
+
+```powershell
+uv run uvicorn api.main:app --reload
+```
+
+Swagger откроется по адресу `http://127.0.0.1:8000/docs`. Два примера запросов:
+
+```text
+GET /predict?description_length=500&issue_type=Bug&priority=Major
+GET /predict?description_length=1500&issue_type=Story&priority=Minor
+```

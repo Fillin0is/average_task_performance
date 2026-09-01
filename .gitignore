@@ -13,3 +13,4 @@ wheels/
 
 # Downloaded datasets and generated artifacts
 /data/
+/artifacts/

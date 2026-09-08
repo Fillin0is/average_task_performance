@@ -26,7 +26,7 @@ SELECT
     i.ID,
     i.Project_ID,
     i.Creation_Date,
-    CHAR_LENGTH(COALESCE(i.Description_Text, '')) AS Description_Length,
+    CHAR_LENGTH(COALESCE(i.Description_Text, '')) AS Description_Issue_Length,
     TIMESTAMPDIFF(
         SECOND,
         i.Creation_Date,
@@ -43,7 +43,8 @@ SELECT
             THEN COALESCE(NULLIF(TRIM(i.Type), ''), 'Unknown')
         ELSE
             COALESCE(NULLIF(TRIM(ftc.From_String), ''), 'Unknown')
-    END AS initial_type
+    END AS initial_type,
+	CHAR_LENGTH(p.Description) AS Description_Project_Length
 FROM Issue AS i
 LEFT JOIN first_priority_change AS fpc
     ON fpc.Issue_ID = i.ID
@@ -51,12 +52,13 @@ LEFT JOIN first_priority_change AS fpc
 LEFT JOIN first_type_change AS ftc
     ON ftc.Issue_ID = i.ID
     AND ftc.change_number = 1
-WHERE i.Resolution_Date IS NOT NULL
-    AND i.Resolution_Date > DATE_ADD(
+JOIN Project AS p
+	ON p.id = i.Project_ID
+WHERE i.Resolution_Date > DATE_ADD(
         i.Creation_Date,
         INTERVAL 5 MINUTE
     )
     AND i.Resolution_Date <= DATE_ADD(
         i.Creation_Date,
-        INTERVAL 8 YEAR
+        INTERVAL 365 DAY
     );

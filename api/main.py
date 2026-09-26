@@ -36,8 +36,7 @@ def load_model_bundle() -> dict:
 
 
 @app.get(
-    "/predict",
-    response_model=PredictionResponse,
+    "/predict", response_model=PredictionResponse,
     summary="Предсказать длительность задачи",
     description=(
         "Примеры для Swagger:\n\n"

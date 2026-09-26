@@ -37,13 +37,13 @@ SELECT
             THEN COALESCE(NULLIF(TRIM(i.Priority), ''), 'Unknown')
         ELSE
             COALESCE(NULLIF(TRIM(fpc.From_String), ''), 'Unknown')
-    END AS initial_priority,
+    END AS Initial_Priority,
     CASE
         WHEN ftc.Issue_ID IS NULL
             THEN COALESCE(NULLIF(TRIM(i.Type), ''), 'Unknown')
         ELSE
             COALESCE(NULLIF(TRIM(ftc.From_String), ''), 'Unknown')
-    END AS initial_type,
+    END AS Initial_Type,
 	CHAR_LENGTH(p.Description) AS Description_Project_Length
 FROM Issue AS i
 LEFT JOIN first_priority_change AS fpc

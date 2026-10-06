@@ -1,16 +1,18 @@
 import os
 from functools import lru_cache
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 
 import joblib
 import pandas as pd
 from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel, Field
 
+from data_access.config import project_path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_MODEL_PATH = PROJECT_ROOT / "artifacts" / "duration_model.joblib"
+
+DEFAULT_MODEL_PATH = project_path.artifact("duration_model.joblib")
+
 
 app = FastAPI(
     title="Issue Duration API",
@@ -30,7 +32,7 @@ def load_model_bundle() -> dict:
     model_path = Path(os.getenv("DURATION_MODEL_PATH", DEFAULT_MODEL_PATH))
     if not model_path.exists():
         raise FileNotFoundError(
-            f"Model not found at {model_path}. Run: uv run python -m ml.train"
+            f"Model not found at {model_path}. Save a compatible trained model first."
         )
     return joblib.load(model_path)
 
@@ -40,22 +42,28 @@ def load_model_bundle() -> dict:
     summary="Предсказать длительность задачи",
     description=(
         "Примеры для Swagger:\n\n"
-        "1. `description_length=500`, `issue_type=Bug`, `priority=Major`\n"
-        "2. `description_length=1500`, `issue_type=Story`, `priority=Minor`"
+        "1. `description_issue_length=500`, `description_project_length=146`, "
+        "`initial_type=Bug`, `initial_priority=P3`\n"
+        "2. `description_issue_length=1500`, `description_project_length=320`, "
+        "`initial_type=Story`, `initial_priority=P4`"
     ),
 )
 def predict_duration(
-    description_length: Annotated[
+    description_issue_length: Annotated[
         int,
-        Query(ge=0, examples=[500], description="Количество символов в описании"),
+        Query(ge=0, examples=[500], description="Количество символов в описании задачи"),
     ],
-    issue_type: Annotated[
+    description_project_length: Annotated[
+        int,
+        Query(ge=0, examples=[146], description="Количество символов в описании проекта"),
+    ],
+    initial_type: Annotated[
         str,
         Query(min_length=1, examples=["Bug"], description="Исходный тип задачи"),
     ],
-    priority: Annotated[
-        str,
-        Query(min_length=1, examples=["Major"], description="Исходный приоритет"),
+    initial_priority: Annotated[
+        Literal["P1", "P2", "P3", "P4", "P5", "Unassigned"],
+        Query(examples=["P3"], description="Нормализованный исходный приоритет"),
     ],
 ) -> PredictionResponse:
     try:
@@ -66,9 +74,10 @@ def predict_duration(
     features = pd.DataFrame(
         [
             {
-                "Description_Length": description_length,
-                "initial_type": issue_type.strip(),
-                "initial_priority": priority.strip(),
+                "Description_Issue_Length": description_issue_length,
+                "Description_Project_Length": description_project_length,
+                "Initial_Type": initial_type.strip(),
+                "Initial_Priority": initial_priority,
             }
         ]
     )

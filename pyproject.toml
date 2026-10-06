@@ -14,7 +14,6 @@ dependencies = [
     "pymysql[rsa]>=1.2.0",
     "pytest>=8.4",
     "scikit-learn>=1.7",
-    "sentence-transformers>=5.6.1",
     "sqlalchemy>=2.0.51",
     "uvicorn>=0.52",
 ]
@@ -24,4 +23,4 @@ requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["api*", "data_access*", "ml*"]
+include = ["api*", "data_access*"]

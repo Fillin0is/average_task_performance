@@ -1,135 +1,150 @@
 # Average task performance
 
-Исследовательский проект для прогнозирования времени выполнения программных
-задач на открытом датасете TAWOS 1.1.
+Исследовательский проект для прогнозирования календарной длительности выполнения
+задач из открытого датасета TAWOS 1.1.
 
-TAWOS содержит задачи из 39 open-source проектов, их тексты, метаданные,
-историю изменений и несколько оценок длительности, включая
-`Resolution_Time_Minutes`, `In_Progress_Minutes` и `Total_Effort_Minutes`.
-
-Полное описание структуры базы, связей и русская расшифровка атрибутов:
-[docs/DATABASE_DICTIONARY_RU.md](docs/DATABASE_DICTIONARY_RU.md).
-
-Сам датасет и содержимое MySQL не хранятся в Git: вместе они занимают около
-17 ГБ. Репозиторий содержит воспроизводимые скрипты загрузки и развёртывания.
+В проекте находятся SQL-запрос для формирования обучающей выборки, ноутбуки для
+анализа и обучения baseline-моделей, а также экспериментальный FastAPI-сервис.
+Сам датасет, содержимое MySQL и обученные модели в Git не хранятся.
 
 ## Требования
 
 - Git;
+- Python 3.12;
+- [uv](https://docs.astral.sh/uv/);
 - Docker с поддержкой `docker compose`;
-- `curl`, `unzip` и около 17 ГБ свободного места.
+- Git Bash с `curl`, `unzip` и `md5sum` для загрузки датасета;
+- около 17 ГБ свободного места.
 
-## Запуск на другом компьютере
+Подробная инструкция для Windows находится в [docs/SETUP.md](docs/SETUP.md),
+а описание таблиц TAWOS — в
+[docs/DATABASE_DICTIONARY_RU.md](docs/DATABASE_DICTIONARY_RU.md).
 
-Подробная пошаговая памятка для Windows: [docs/SETUP.md](docs/SETUP.md).
+## Установка проекта
 
-```bash
+```powershell
 git clone https://github.com/Fillin0is/average_task_performance.git
 cd average_task_performance
-cp docker/.env.example docker/.env
-./scripts/download_tawos.sh
-docker compose -f docker/docker-compose.tawos.yaml up -d
-./scripts/check_tawos.sh
+uv sync
+Copy-Item docker\.env.example docker\.env
 ```
 
-## 1. Загрузка датасета
+Все дальнейшие команды выполняются из корня проекта.
 
-Потребуется около 5 ГБ свободного места: официальный архив занимает 608 МБ,
-распакованный MySQL dump — около 4,1 ГБ.
+## Загрузка и запуск TAWOS
+
+Скачайте и распакуйте официальный дамп через Git Bash:
 
 ```bash
 ./scripts/download_tawos.sh
 ```
 
-Скрипт загружает TAWOS с UCL Figshare, умеет продолжать прерванную загрузку и
-проверяет официальный MD5 checksum. Результат сохраняется в игнорируемом Git
-каталоге `data/raw/tawos/`.
+Запустите MySQL и CloudBeaver:
 
-Используя датасет, необходимо соблюдать его условия: данные предназначены для
-исследовательских целей, нельзя пытаться деанонимизировать участников или
-применять результаты во вред авторам и владельцам проектов.
-
-## 2. Импорт в MySQL
-
-Датасет опубликован как dump MySQL 8. Первый запуск контейнера автоматически
-создаёт базу `tawos` и импортирует dump:
-
-```bash
+```powershell
 docker compose -f docker/docker-compose.tawos.yaml up -d
+```
+
+При первом запуске MySQL импортирует `data/raw/tawos/TAWOS.sql`. Проверить
+состояние контейнеров и импорт можно командами:
+
+```powershell
+docker compose -f docker/docker-compose.tawos.yaml ps
 docker compose -f docker/docker-compose.tawos.yaml logs -f mysql
 ```
 
-Импорт 4,1 ГБ может занять несколько минут. До его окончания контейнер будет
-иметь статус `health: starting`. Проверить успешную установку:
+После окончания импорта выполните в Git Bash:
 
 ```bash
 ./scripts/check_tawos.sh
 ```
 
-MySQL доступен только локально на `127.0.0.1:3307`. Настройки для разработки
-можно изменить, скопировав `docker/.env.example` в `docker/.env` до первого
-запуска.
+MySQL доступен с компьютера на `127.0.0.1:3307`. Значения по умолчанию:
 
-## Просмотр данных
-
-Подключитесь к базе из DBeaver, DataGrip или другого MySQL-клиента:
-
-| Параметр | Значение по умолчанию |
+| Параметр | Значение |
 |---|---|
-| Host | `127.0.0.1` |
-| Port | `3307` |
 | Database | `tawos` |
 | User | `tawos` |
 | Password | `tawos_dev_password` |
 
-Быстро открыть MySQL CLI без установки клиента на компьютер:
+CloudBeaver открывается по адресу `http://127.0.0.1:8978`. Для подключения из
+CloudBeaver используйте хост `mysql`, порт `3306` и драйвер MariaDB. В свойствах
+драйвера установите `allowPublicKeyRetrieval=true` и `sslMode=disable`.
 
-```bash
-docker compose -f docker/docker-compose.tawos.yaml exec mysql \
-  mysql -utawos -ptawos_dev_password tawos
-```
+Остановить контейнеры с сохранением базы:
 
-Остановить MySQL с сохранением данных:
-
-```bash
+```powershell
 docker compose -f docker/docker-compose.tawos.yaml down
 ```
 
-Именованный volume позволяет повторно запускать контейнер без нового импорта.
-Команда ниже полностью удаляет импортированную базу; исходный SQL dump останется
-на месте:
+## Анализ и обучение моделей
 
-```bash
-docker compose -f docker/docker-compose.tawos.yaml down --volumes
-```
-
-## Источник
-
-- [TAWOS dataset, UCL Figshare](https://doi.org/10.5522/04/21308124)
-- [Описание и схема](https://github.com/SOLAR-group/TAWOS)
-- V. Tawosi et al., *A Versatile Dataset of Agile Open Source Software
-  Projects*, MSR 2022, DOI: 10.1145/3524842.3528029.
-
-## Обучение baseline и запуск API
-
-Обучить модель на данных из MySQL и сохранить её локально:
+Проверить Python-подключение к MySQL:
 
 ```powershell
-uv run python -m ml.train
+uv run python -m data_access.connection
 ```
 
-Модель появится в `artifacts/duration_model.joblib`, а метрики — в
-`reports/baseline_metrics.json`. Каталог `artifacts` не попадает в Git.
+Запустить JupyterLab:
 
-Запустить API:
+```powershell
+uv run jupyter lab
+```
+
+Ноутбуки расположены в `data_access/notebooks/`:
+
+1. `01_data_audit.ipynb` — первичный анализ таблиц и качества данных;
+2. `02_dataset_check.ipynb` — проверка итоговой обучающей выборки;
+3. `03_general_baseline.ipynb` — baseline с одной регрессией;
+4. `04_duration_buckets_baseline.ipynb` — текущий эксперимент с четырьмя временными
+   бакетами: 0–1, 1–7, 7–30 и 30–365 дней.
+
+Обучающая выборка формируется запросом
+`data_access/queries/training_dataset.sql`. В текущем эксперименте используются
+четыре признака:
+
+- `Description_Issue_Length`;
+- `Description_Project_Length`;
+- `Initial_Type`;
+- `Initial_Priority`.
+
+Приоритет нормализуется в одну из категорий `P1`, `P2`, `P3`, `P4`, `P5` или
+`Unassigned`. Целевая переменная — `Duration_Days`.
+
+## API
+
+Запуск сервера:
 
 ```powershell
 uv run uvicorn api.main:app --reload
 ```
 
-Swagger откроется по адресу `http://127.0.0.1:8000/docs`. Два примера запросов:
+Swagger доступен по адресу `http://127.0.0.1:8000/docs`.
+
+Пример запроса:
 
 ```text
-GET /predict?description_length=500&issue_type=Bug&priority=Major
-GET /predict?description_length=1500&issue_type=Story&priority=Minor
+GET /predict?description_issue_length=500&description_project_length=146&initial_type=Bug&initial_priority=P3
 ```
+
+API передаёт модели те же четыре признака, что используются в текущем
+ноутбуке. По умолчанию сервис ищет совместимый joblib-артефакт по пути
+`artifacts/duration_model.joblib`; путь можно переопределить переменной окружения
+`DURATION_MODEL_PATH`.
+
+Автоматическое сохранение четырёх моделей и выбор нужного временного бакета для
+новой задачи пока не реализованы. Поэтому API остаётся экспериментальным и без
+совместимого артефакта отвечает статусом `503`.
+
+## Тесты
+
+```powershell
+uv run pytest
+```
+
+## Источники
+
+- [TAWOS dataset, UCL Figshare](https://doi.org/10.5522/04/21308124)
+- [Описание и схема TAWOS](https://github.com/SOLAR-group/TAWOS)
+- V. Tawosi et al., *A Versatile Dataset of Agile Open Source Software
+  Projects*, MSR 2022, DOI: 10.1145/3524842.3528029.

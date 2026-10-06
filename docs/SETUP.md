@@ -9,6 +9,7 @@ JupyterLab.
 - Git;
 - Docker Desktop с поддержкой `docker compose`;
 - Python 3.12;
+- [uv](https://docs.astral.sh/uv/);
 - Git Bash с командами `curl`, `unzip` и `md5sum`;
 - не менее 17 ГБ свободного места.
 
@@ -153,23 +154,7 @@ LIMIT 100;
 
 ## 7. Python-окружение
 
-Создайте виртуальное окружение в PowerShell:
-
-```powershell
-py -3.12 -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -e .
-```
-
-Если PowerShell запрещает активацию:
-
-```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\.venv\Scripts\Activate.ps1
-```
-
-Если установлен `uv`, вместо команд выше достаточно:
+Установите зависимости проекта:
 
 ```powershell
 uv sync
@@ -178,13 +163,7 @@ uv sync
 Проверка подключения Python к MySQL:
 
 ```powershell
-python -m data_access.connection
-```
-
-Проверка загрузки DataFrame:
-
-```powershell
-python -m data_access.loaders
+uv run python -m data_access.connection
 ```
 
 Python запускается на компьютере, поэтому в `data_access/connection.py`
@@ -192,33 +171,14 @@ Python запускается на компьютере, поэтому в `data
 
 ## 8. Запуск JupyterLab
 
-При активном `.venv`:
-
 ```powershell
-python -m jupyter lab
+uv run jupyter lab
 ```
 
-Откройте существующий notebook `data_access/loaders.ipynb` или создайте новый.
-Пример ячейки:
-
-```python
-from data_access.loaders import df
-
-df.head(20)
-```
-
-Для интерактивного табличного просмотра можно установить пакет в текущее
-ядро notebook:
-
-```python
-%pip install itables
-```
-
-```python
-from itables import show
-
-show(df)
-```
+Откройте нужный notebook из каталога `data_access/notebooks/`. Анализ начинается
+с `01_data_audit.ipynb`, проверка обучающей выборки выполняется в
+`02_dataset_check.ipynb`, а эксперименты с моделями находятся в
+`03_general_baseline.ipynb` и `04_duration_buckets_baseline.ipynb`.
 
 Не загружайте целиком `Comment` и `Change_Log`: в них миллионы строк. Для
 первичного исследования используйте выбранные столбцы, `WHERE` и `LIMIT`.
@@ -255,14 +215,8 @@ docker compose `
 Эта команда удаляет Docker volumes. SQL-дамп в `data/raw/tawos/` остаётся и
 будет импортирован снова при следующем запуске.
 
-Деактивировать Python-окружение:
-
-```powershell
-deactivate
-```
-
-Само окружение `.venv` можно удалить и создать заново; исходный код, notebook
-и данные MySQL от этого не удаляются.
+Окружение `.venv` можно удалить и создать заново командой `uv sync`; исходный
+код, notebooks и данные MySQL от этого не удаляются.
 
 ## 10. Частые проблемы
 
@@ -293,9 +247,8 @@ Test-NetConnection 127.0.0.1 -Port 3307
 
 ### Jupyter не видит библиотеки проекта
 
-Запускайте его после активации `.venv`:
+Запускайте JupyterLab из корня проекта через `uv`:
 
 ```powershell
-.\.venv\Scripts\Activate.ps1
-python -m jupyter lab
+uv run jupyter lab
 ```

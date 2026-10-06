@@ -14,7 +14,7 @@
 
 ## Команды
 
-Менеджер пакетов — `uv` (альтернатива: `pip install -e .` + venv, см. `docs/SETUP.md`).
+Менеджер пакетов — `uv`.
 
 ```powershell
 # установка зависимостей
@@ -27,9 +27,6 @@ docker compose -f docker/docker-compose.tawos.yaml up -d
 # скачать датасет (Git Bash)
 ./scripts/download_tawos.sh
 
-# обучить baseline-модель -> artifacts/duration_model.joblib + reports/baseline_metrics.json
-uv run python -m ml.train
-
 # запустить API (Swagger на http://127.0.0.1:8000/docs)
 uv run uvicorn api.main:app --reload
 
@@ -37,16 +34,13 @@ uv run uvicorn api.main:app --reload
 uv run pytest
 uv run pytest tests/test_api.py::test_predict_bug   # один тест
 
-# проверка подключения к БД / примера загрузчика
-python -m data_access.connection
-python -m data_access.loaders
+# проверка подключения к БД
+uv run python -m data_access.connection
 ```
 
-Важно: модуль `ml/` (тот самый `python -m ml.train`, на который ссылаются README,
-сообщения об ошибках в `api/main.py` и список пакетов в `pyproject.toml`) в
-репозитории пока физически отсутствует — обучение модели и получение
-`artifacts/duration_model.joblib` сейчас нужно делать иначе (например, из
-ноутбука), прежде чем `api/main.py` сможет отдавать предсказания.
+Автоматического скрипта обучения и экспорта моделей пока нет. Эксперименты
+выполняются в notebooks, а API требует заранее подготовленный совместимый
+`artifacts/duration_model.joblib`.
 
 ## Архитектура
 
@@ -54,34 +48,34 @@ python -m data_access.loaders
   с TAWOS. Захардкожен на адрес со стороны хоста `127.0.0.1:3307` (порт, в который
   Docker пробрасывает контейнер), а не на внутрисетевой адрес `mysql:3306`,
   которым пользуется CloudBeaver.
-- **`data_access/loaders.py`** — пример/референсный загрузчик через
-  `pandas.read_sql_query` поверх `engine`. Таблицы `Comment` и `Change_Log`
-  содержат миллионы строк — всегда фильтровать через `WHERE`/`LIMIT`, никогда не
-  загружать их целиком.
+- **`data_access/config.py`** — централизованный доступ к корню проекта, SQL-запросам
+  и каталогу артефактов через `project_path`.
 - **`data_access/queries/training_dataset.sql`** — основной запрос, формирующий
   обучающий датасет из сырых таблиц `Issue`/`Change_Log`. В нём вычисляются:
   - `Duration_Days` (целевая переменная): `Resolution_Date - Creation_Date`, с
-    ограничением на задачи, решённые в промежутке от 5 минут до 8 лет после
+    ограничением на задачи, решённые в промежутке от 5 минут до 365 дней после
     создания (почему выбрано именно такое окно и что стоит за приоритетом/статусом
     — см. `docs/NOTE.md`).
-  - `initial_priority` / `initial_type`: *первое* значение `Priority`/`Type` из
+  - `Initial_Priority` / `Initial_Type`: *первое* значение `Priority`/`Type` из
     `Change_Log`, а если поле никогда не менялось — текущее значение
     `Issue.Priority`/`Issue.Type`. Это сделано потому, что у задач в Jira
     приоритет/тип часто переназначают уже после создания, а модель должна
     обучаться на том, что было известно в момент создания задачи, а не на
     финальном значении.
-  - `Description_Length`: `CHAR_LENGTH` от `Description_Text`.
+  - `Description_Issue_Length`: `CHAR_LENGTH` от описания задачи;
+  - `Description_Project_Length`: `CHAR_LENGTH` от описания проекта.
 - **`data_access/notebooks/`** — исследовательские ноутбуки (аудит данных,
   проверка датасета, baseline-моделирование); именно здесь прорабатываются
-  решения по датасету/признакам, прежде чем они попадают в `data_access/queries/`
-  или (в перспективе) в `ml/`.
+  решения по датасету и признакам, прежде чем они попадают в
+  `data_access/queries/` и API.
 - **`api/main.py`** — FastAPI-приложение с единственным эндпоинтом
   `GET /predict`. Загружает joblib-сериализованный бандл `{"model": ...}`
   (`load_model_bundle`, кешируется через `lru_cache`) из
   `artifacts/duration_model.joblib` (путь можно переопределить переменной
   окружения `DURATION_MODEL_PATH`). Словарь признаков, собираемый из query-
   параметров, должен точно совпадать с именами признаков при обучении:
-  `Description_Length`, `initial_type`, `initial_priority`. Если файл модели
+  `Description_Issue_Length`, `Description_Project_Length`, `Initial_Type`,
+  `Initial_Priority`. Если файл модели
   отсутствует — возвращается HTTP 503.
 - **`tests/test_api.py`** — подменяет `api_main.load_model_bundle` через
   monkeypatch на заглушку модели, поэтому тестам не нужен реально обученный
@@ -104,5 +98,5 @@ python -m data_access.loaders
   целевую переменную — в отличие от приоритета.
 - У многих задач изначально вообще не был проставлен приоритет — только у
   ~79 691 задачи приоритет реально был задан в момент создания, поэтому
-  `initial_priority` и вычисляется с откатом через `Change_Log`, как описано
+  `Initial_Priority` и вычисляется с откатом через `Change_Log`, как описано
   выше.

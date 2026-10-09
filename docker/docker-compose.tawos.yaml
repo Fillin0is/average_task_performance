@@ -29,22 +29,8 @@ services:
     networks:
       - tawos-net
 
-  cloudBeaver:
-    image: dbeaver/cloudbeaver:26.1.3
-    restart: unless-stopped
-    depends_on:
-      mysql:
-        condition: service_healthy
-    ports:
-      - "127.0.0.1:8978:8978"
-    volumes:
-      - cloudbeaver_workspace:/opt/cloudbeaver/workspace
-    networks:
-      - tawos-net
-
 volumes:
   tawos_mysql_data:
-  cloudbeaver_workspace:
 
 networks:
   tawos-net:

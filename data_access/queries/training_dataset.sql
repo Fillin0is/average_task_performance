@@ -86,4 +86,5 @@ WHERE i.Resolution_Date > DATE_ADD(
     AND i.Resolution_Date <= DATE_ADD(
         i.Creation_Date,
         INTERVAL 365 DAY
-    );
+    )
+    AND i.Creation_Date >= '2004-01-01';

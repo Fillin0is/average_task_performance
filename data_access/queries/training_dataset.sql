@@ -45,11 +45,13 @@ SELECT
     i.Creation_Date,
     CHAR_LENGTH(COALESCE(i.Description_Text, '')) AS Description_Issue_Length,
     i.Resolution_Date,
+    i.Resolution_Time_Minutes,
     TIMESTAMPDIFF(
         SECOND,
         i.Creation_Date,
         i.Resolution_Date
     ) / 86400.0 AS Duration_Days,
+    i.Status,
     CASE
         WHEN fpc.Issue_ID IS NULL
             THEN COALESCE(NULLIF(TRIM(i.Priority), ''), 'Unknown')

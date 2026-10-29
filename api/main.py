@@ -1,14 +1,14 @@
-import os
+from fastapi import FastAPI, HTTPException, Query
+import pandas as pd
+
+from typing import Annotated, Literal
 from functools import lru_cache
 from pathlib import Path
-from typing import Annotated, Literal
-
 import joblib
-import pandas as pd
-from fastapi import FastAPI, HTTPException, Query
-from pydantic import BaseModel, Field
+import os
 
 from data_access.config import project_path
+from api.schemas import PredictionResponse
 
 
 DEFAULT_MODEL_PATH = project_path.artifact("duration_model.joblib")
@@ -21,10 +21,6 @@ app = FastAPI(
 )
 
 
-class PredictionResponse(BaseModel):
-    predicted_duration_days: float = Field(examples=[3.25])
-    predicted_duration_hours: float = Field(examples=[78.0])
-    message: str = Field(examples=["Предсказанная длительность: ~78.0 ч."])
 
 
 @lru_cache(maxsize=1)
